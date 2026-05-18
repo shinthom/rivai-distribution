@@ -45,10 +45,17 @@ async function main() {
 function renderLauncher(lm) {
   fillText('launcherVersion', lm.latestVersion ?? '—');
   fillText('launcherBuildId', lm.buildId ? `Build ${lm.buildId}` : '—');
+
   const mac = lm.launcher?.mac;
-  const archLabel = mac?.arch ? `macOS (${mac.arch === 'arm64' ? 'Apple Silicon' : mac.arch})` : 'macOS';
-  fillText('launcherTarget', archLabel);
+  const win = lm.launcher?.win64;
+
+  const targets = [];
+  if (mac) targets.push(mac.arch === 'arm64' ? 'macOS (Apple Silicon)' : `macOS (${mac.arch})`);
+  if (win) targets.push(win.arch === 'x64' ? 'Windows (x64)' : `Windows (${win.arch})`);
+  fillText('launcherTarget', targets.join(' / ') || '—');
+
   applyPlatform('downloadLauncherMac', 'sizeLauncherMac', mac);
+  applyPlatform('downloadLauncherWin64', 'sizeLauncherWin64', win);
 }
 
 async function fetchManifest(url) {
