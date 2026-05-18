@@ -40,13 +40,16 @@ parse_common_flags() {
 is_dry_run() { [[ "$DRY_RUN" == "1" ]]; }
 
 # run "<description>" cmd args...  — logs and either runs or skips based on DRY_RUN
+# Stdout of the executed command is redirected to stderr so callers that
+# capture upload_and_describe-style functions don't get wrangler progress
+# noise mixed into their structured output.
 run() {
   local desc="$1"; shift
   if is_dry_run; then
     printf '%s %s\n  > %s\n' "$(color '35' '[dry  ]')" "$desc" "$*" >&2
   else
     log "$desc"
-    "$@"
+    "$@" >&2
   fi
 }
 
