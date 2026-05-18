@@ -97,6 +97,19 @@ jobs:
       - name: Install wrangler
         run: npm install -g wrangler
 
+      - name: Diagnose wrangler auth
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          echo "wrangler version: $(wrangler --version)"
+          echo "token length: ${#CLOUDFLARE_API_TOKEN}"
+          echo "account id length: ${#CLOUDFLARE_ACCOUNT_ID}"
+          wrangler whoami || true
+          echo "--- list buckets (read) ---"
+          wrangler r2 bucket list || true
+
       - name: Publish launcher to R2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

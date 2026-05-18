@@ -118,51 +118,46 @@ fi
 # ---- Merge with existing launcher manifest -----------------------------
 EXISTING_JSON=$(curl -fsSL "$(r2_public_url "manifest/launcher/${CHANNEL}.json")" 2>/dev/null || echo '{}')
 
-NEW_JSON=$(python3 - <<PY
-import json, sys, os
-existing = json.loads(${EXISTING_JSON@Q})
+# Pass everything as env vars (bash @Q quoting varies between macOS/Linux).
+NEW_JSON=$(
+  EXISTING_JSON="$EXISTING_JSON" \
+  MAC_ENTRY="$MAC_ENTRY" \
+  WIN_ENTRY="$WIN_ENTRY" \
+  VERSION="$VERSION" \
+  BUILD_ID="$BUILD_ID" \
+  CHANNEL="$CHANNEL" \
+  RELEASED_AT="$RELEASED_AT" \
+  python3 - <<'PY'
+import json, os
+
+existing = json.loads(os.environ.get('EXISTING_JSON') or '{}')
+
 m = {
     "project":       "Rivai",
-    "channel":       ${CHANNEL@Q},
-    "latestVersion": ${VERSION@Q},
-    "buildId":       ${BUILD_ID@Q},
-    "releasedAt":    ${RELEASED_AT@Q},
+    "channel":       os.environ['CHANNEL'],
+    "latestVersion": os.environ['VERSION'],
+    "buildId":       os.environ['BUILD_ID'],
+    "releasedAt":    os.environ['RELEASED_AT'],
     "launcher":      existing.get("launcher", {}),
 }
 
-def entry_block(block):
-    if not block:
-        return None
-    lines = block.strip().split("\n")
+def parse_entry(block, arch):
+    lines = block.split("\n")
     return {
-        "arch": "arm64" if "mac" in os.environ.get("PLATFORM_KEY","") else "x64",
+        "arch":        arch,
         "downloadUrl": lines[0],
         "sha256":      lines[1],
         "sizeBytes":   int(lines[2]),
         "executable":  lines[3],
     }
 
-mac_entry = ${MAC_ENTRY@Q}
-win_entry = ${WIN_ENTRY@Q}
+mac_entry = os.environ.get('MAC_ENTRY', '').strip()
+win_entry = os.environ.get('WIN_ENTRY', '').strip()
 
-if mac_entry.strip():
-    lines = mac_entry.strip().split("\n")
-    m["launcher"]["mac"] = {
-        "arch": "arm64",
-        "downloadUrl": lines[0],
-        "sha256":      lines[1],
-        "sizeBytes":   int(lines[2]),
-        "executable":  lines[3],
-    }
-if win_entry.strip():
-    lines = win_entry.strip().split("\n")
-    m["launcher"]["win64"] = {
-        "arch": "x64",
-        "downloadUrl": lines[0],
-        "sha256":      lines[1],
-        "sizeBytes":   int(lines[2]),
-        "executable":  lines[3],
-    }
+if mac_entry:
+    m["launcher"]["mac"]   = parse_entry(mac_entry, "arm64")
+if win_entry:
+    m["launcher"]["win64"] = parse_entry(win_entry, "x64")
 
 print(json.dumps(m, indent=2, ensure_ascii=False))
 PY
