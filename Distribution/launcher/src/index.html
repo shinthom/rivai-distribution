@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rivai Launcher</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="bar">
+    <span class="brand">Rivai</span>
+    <span class="brand-sub" id="channel-label">dev</span>
+  </header>
+
+  <main class="content">
+    <section class="status" id="status-card">
+      <div class="status-row">
+        <div class="status-col">
+          <span class="status-label">Latest</span>
+          <span class="status-value" id="latest-version">로딩 중…</span>
+          <span class="status-sub" id="latest-build">—</span>
+        </div>
+        <div class="status-col">
+          <span class="status-label">Installed</span>
+          <span class="status-value" id="installed-version">—</span>
+          <span class="status-sub" id="installed-build">—</span>
+        </div>
+        <div class="status-col">
+          <span class="status-label">Server</span>
+          <span class="status-value" id="server-name">—</span>
+          <span class="status-sub" id="server-host">—</span>
+        </div>
+      </div>
+
+      <p class="status-tagline" id="status-tagline">시작하려면 manifest를 확인합니다…</p>
+    </section>
+
+    <section class="actions">
+      <button id="primary-btn" class="btn btn-primary" disabled>
+        <span id="primary-label">대기 중</span>
+      </button>
+      <button id="secondary-btn" class="btn btn-secondary" hidden></button>
+    </section>
+
+    <section class="progress" id="progress-card" hidden>
+      <div class="progress-bar"><span id="progress-fill"></span></div>
+      <div class="progress-meta">
+        <span id="progress-phase">—</span>
+        <span id="progress-numbers">—</span>
+      </div>
+    </section>
+
+    <section class="error" id="error-card" hidden>
+      <h2>문제가 발생했어요</h2>
+      <p id="error-message">—</p>
+      <div class="error-actions">
+        <button id="retry-btn" class="btn btn-secondary">재시도</button>
+        <button id="open-logs-btn-err" class="btn btn-secondary">로그 열기</button>
+      </div>
+    </section>
+
+    <section class="links">
+      <a href="#" data-link="patchNotes">Patch Notes</a>
+      <a href="#" data-link="knownIssues">Known Issues</a>
+      <button class="link-btn" id="open-logs-btn">Open Logs</button>
+      <button class="link-btn" id="open-install-btn">Open Install</button>
+      <button class="link-btn" id="copy-info-btn">Copy Build Info</button>
+      <a href="#" data-link="feedback" class="primary-link">Feedback</a>
+    </section>
+  </main>
+
+  <footer class="bar bar-bottom">
+    <span id="footer-platform">—</span>
+    <span id="footer-manifest" class="footer-url">—</span>
+  </footer>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "project": "Rivai",
+  "channel": "dev",
+  "latestVersion": "0.0.1",
+  "buildId": "2026.05.17.001",
+  "releasedAt": "2026-05-17T23:22:49+09:00",
+  "launcher": {
+    "mac": {
+      "arch": "arm64",
+      "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/launcher/mac/rivai-launcher_0.0.1_mac_arm64.zip",
+      "sha256": "5379f30296f715b5ebe6ceb374adb82cce7a7609a65c68b9a8665d8b69752695",
+      "sizeBytes": 5319351,
+      "executable": "Rivai Launcher.app"
+    }
+  }
+}

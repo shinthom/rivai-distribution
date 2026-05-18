@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-label="Road to Rivai">
+  <rect width="1254" height="1254" fill="#ffffff"/>
+  <g fill-rule="evenodd" clip-rule="evenodd">
+    <!-- left eye outer mark -->
+    <path fill="#000000" d="M48 379 474 581 181 464 617 724 577 724 612 751 224 725 143 505 218 535 541 713 258 694 220 535 48 379z"/>
+    <!-- left eye inner yellow -->
+    <path fill="#ffe600" d="M220 535 541 710 259 694z"/>
+
+    <!-- right eye outer mark -->
+    <path fill="#000000" d="M1206 379 780 581 1073 464 637 724 677 724 642 751 1030 725 1111 505 1036 535 713 713 996 694 1034 535 1206 379z"/>
+    <!-- right eye inner yellow -->
+    <path fill="#ffe600" d="M1034 535 713 710 995 694z"/>
+  </g>
+</svg>

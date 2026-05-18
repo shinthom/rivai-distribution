@@ -1,0 +1,13 @@
+# Staging — 더미/중간 산출물. 언제든 재생성 가능.
+staging/
+
+# 빌드 zip — R2가 정본(source of truth).
+# 큰 바이너리는 git에 두지 않는다. 로컬은 검증용 캐시일 뿐.
+builds/
+
+# wrangler 캐시·로컬 state
+.wrangler/
+.cache/
+
+# OS
+.DS_Store

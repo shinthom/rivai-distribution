@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Known Issues · Rivai</title>
+  <meta name="description" content="Rivai dev 채널의 현재 미해결 이슈 목록" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">Rivai</a>
+    <span class="brand-sub">Known Issues</span>
+  </header>
+
+  <main class="container">
+    <nav class="crumbs"><a href="../">Home</a> · Known Issues</nav>
+
+    <article class="doc">
+      <header class="doc-header">
+        <h1>현재 미해결 이슈</h1>
+        <span class="badge">dev</span>
+        <div class="doc-meta">
+          <span>채널: <strong>dev</strong></span>
+          <span>마지막 갱신: <strong>2026-05-17</strong></span>
+        </div>
+      </header>
+
+      <p>이 페이지는 현재 dev 채널의 살아있는 이슈만 보여줍니다. 해결된 이슈는 다음 빌드 패치노트의 <em>Fixes</em>로 옮겨집니다.</p>
+
+      <div class="issue">
+        <h3>클라이언트가 더미 빌드 — 게임 콘텐츠 없음</h3>
+        <div class="issue-meta">
+          <span>등록: 2026-05-17</span>
+          <span>발견 빌드: 0.0.1-dev</span>
+          <span>영향: 전체</span>
+        </div>
+        <div class="issue-body">
+          <p>실행해도 게임이 동작하지 않습니다. <code>Rivai.exe</code>·<code>Rivai.app</code>은 파이프라인 검증을 위한 placeholder입니다.</p>
+          <div class="issue-workaround">우회 없음. M0.2 / D01 이후 실제 Unreal 빌드로 교체될 예정입니다.</div>
+        </div>
+      </div>
+
+      <div class="issue">
+        <h3>런처 없음 — 수동 다운로드만 가능</h3>
+        <div class="issue-meta">
+          <span>등록: 2026-05-17</span>
+          <span>발견 빌드: 0.0.1-dev</span>
+          <span>영향: 전체</span>
+        </div>
+        <div class="issue-body">
+          <p>현 단계에서는 홈페이지에서 zip을 직접 받아야 합니다. 자동 다운로드·sha256 검증·실행은 런처(D01)에서 제공됩니다.</p>
+          <div class="issue-workaround">홈페이지의 Download 버튼을 사용. 받은 zip의 sha256을 manifest와 직접 비교하면 무결성 확인 가능.</div>
+        </div>
+      </div>
+
+      <div class="issue">
+        <h3>Mac: Gatekeeper가 첫 실행을 차단</h3>
+        <div class="issue-meta">
+          <span>등록: 2026-05-17</span>
+          <span>갱신: 2026-05-18</span>
+          <span>발견 빌드: 0.0.1-dev</span>
+          <span>영향: macOS 사용자</span>
+        </div>
+        <div class="issue-body">
+          <p>코드 사인되지 않은 클라이언트와 런처는 macOS Gatekeeper가 첫 실행을 막습니다. macOS 버전에 따라 우회 방법이 다릅니다.</p>
+
+          <p><strong>macOS 14 (Sonoma) 이하</strong>: Finder에서 <code>Rivai.app</code> / <code>Rivai Launcher.app</code>을 우클릭 → "열기" 선택 → 경고창에서 "열기" 클릭. 한 번 허용된 뒤로는 더블클릭으로 열립니다.</p>
+
+          <p><strong>macOS 15 (Sequoia) / 26 이상</strong>: 정책이 강화되어 위 방법이 동작하지 않고 <em>"손상되었기 때문에 열 수 없습니다"</em>로 표시됩니다. 실제로 손상된 것이 아니라 macOS가 사인되지 않은 다운로드 파일에 자동으로 붙이는 quarantine 속성 때문입니다. 터미널에서 다음 명령으로 quarantine을 제거하세요.</p>
+
+          <div class="issue-workaround">
+            <p><code>xattr -dr com.apple.quarantine ~/Downloads/Rivai\ Launcher.app</code></p>
+            <p>또는 명령 일부만 친 뒤 Finder의 .app 파일을 터미널 창에 드래그하면 경로가 자동 입력됩니다. 클라이언트 zip을 손으로 받은 경우에도 동일하게 압축 해제 후 .app 또는 .exe 경로에 적용하세요.</p>
+          </div>
+
+          <p style="margin-top:10px;color:var(--fg-dim);font-size:12px;">정식 코드 사인 + 공증(notarization)은 Apple Developer 계정($99/년)이 필요해 후속 마일스톤에서 처리합니다.</p>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <span>Rivai · Dev Channel</span>
+    <span><a href="../patch-notes/">전체 패치노트 목록</a></span>
+  </footer>
+</body>
+</html>

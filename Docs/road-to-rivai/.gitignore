@@ -1,0 +1,38 @@
+# Build output
+site/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.pnpm-store/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Python (legacy scripts)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OMC / agent state
+.omc/
+.omx/
+.claude/

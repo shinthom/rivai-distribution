@@ -1,0 +1,23 @@
+{
+  "name": "road-to-rivai-wiki",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Markdown-first development wiki for Road to Rivai",
+  "scripts": {
+    "build": "node scripts/build-wiki.mjs",
+    "serve": "npx serve site",
+    "clean": "rm -rf site"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

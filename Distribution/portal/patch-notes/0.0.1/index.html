@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patch Notes 0.0.1-dev · Rivai</title>
+  <meta name="description" content="Rivai 0.0.1-dev 빌드 패치노트" />
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../../">Rivai</a>
+    <span class="brand-sub">Patch Notes</span>
+  </header>
+
+  <main class="container">
+    <nav class="crumbs"><a href="../../">Home</a> · <a href="../">Patch Notes</a> · 0.0.1-dev</nav>
+
+    <article class="doc">
+      <header class="doc-header">
+        <h1>0.0.1-dev</h1>
+        <span class="badge">dev</span>
+        <div class="doc-meta">
+          <span>Build ID: <strong>2026.05.17.001</strong></span>
+          <span>배포일: <strong>2026-05-17</strong></span>
+        </div>
+      </header>
+
+      <section class="doc-section">
+        <h2>Test Focus</h2>
+        <p>이번 빌드는 배포 파이프라인 자체를 검증하기 위한 더미 빌드입니다. 게임 콘텐츠는 포함되어 있지 않습니다.</p>
+        <ul>
+          <li>홈페이지에서 자기 OS에 맞는 다운로드 버튼이 강조되는지</li>
+          <li>다운로드한 zip의 sha256이 manifest 값과 일치하는지 (수동 검증)</li>
+          <li>Mac: 압축 해제 후 <code>Rivai.app</code> 번들 구조가 유지되는지</li>
+          <li>Windows: 압축 해제 후 <code>Version.txt</code>에 적힌 Version·Build ID가 이 패치노트와 일치하는지</li>
+        </ul>
+      </section>
+
+      <section class="doc-section">
+        <h2>Changes</h2>
+        <ul>
+          <li>최초 dev 채널 배포</li>
+          <li>Windows·Mac 더미 클라이언트 zip 동시 제공</li>
+          <li>manifest 단일 파일로 두 플랫폼 빌드 관리 (<code>client.win64</code>, <code>client.mac</code>)</li>
+          <li>R2 public bucket을 통한 무결성 검증(sha256) 가능한 배포 파이프라인 가동</li>
+        </ul>
+      </section>
+
+      <section class="doc-section">
+        <h2>Fixes</h2>
+        <p class="doc-section empty" style="padding:0;margin:0">최초 빌드 — 해당 없음.</p>
+      </section>
+
+      <section class="doc-section">
+        <h2>Known Issues at Release</h2>
+        <p>최신 미해결 이슈는 <a href="../../known-issues/">Known Issues 페이지</a>를 참고하세요. 배포 시점 기준 핵심 항목:</p>
+        <ul>
+          <li>클라이언트가 더미라 실행해도 게임이 동작하지 않음 (M0.2 / D01 이후 실제 빌드로 교체 예정)</li>
+          <li>런처 없음 — 수동 zip 다운로드만 가능 (D01 완료 시 자동 다운로드·검증 제공)</li>
+          <li>Mac은 사인되지 않아 첫 실행 시 Gatekeeper가 막음 (우클릭 → 열기로 우회)</li>
+        </ul>
+      </section>
+
+      <footer class="doc-footer">
+        <span>이전 빌드: <em>없음</em></span>
+        <span><a href="https://rivai.example/feedback">피드백 보내기</a></span>
+      </footer>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <span>Rivai · Dev Channel</span>
+    <span><a href="../">전체 패치노트 목록</a></span>
+  </footer>
+</body>
+</html>

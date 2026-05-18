@@ -1,0 +1,29 @@
+{
+  "project": "Rivai",
+  "channel": "dev",
+  "latestVersion": "0.0.1-dev",
+  "buildId": "2026.05.17.001",
+  "releasedAt": "2026-05-17T22:24:26+09:00",
+  "client": {
+    "win64": {
+      "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/client/win64/rivai_client_0.0.1_dev_win64.zip",
+      "sha256": "99dc303096f4ff121ab93c72f0898980d99e47c721b443ad98c17ff6ca2fda35",
+      "sizeBytes": 664,
+      "executable": "Rivai.exe"
+    },
+    "mac": {
+      "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/client/mac/rivai_client_0.0.1_dev_mac.zip",
+      "sha256": "73bbb8ea0be06732c22c2c8eb47fe518ae9305348da573afd44b33d4ea64e44d",
+      "sizeBytes": 3792,
+      "executable": "Rivai.app"
+    }
+  },
+  "server": {
+    "name": "Test Server 01",
+    "host": "test.rivai.example",
+    "port": 7777
+  },
+  "patchNotesUrl": "https://rivai-portal.pages.dev/patch-notes/0.0.1/",
+  "feedbackUrl": "https://rivai.example/feedback",
+  "knownIssuesUrl": "https://rivai-portal.pages.dev/known-issues/"
+}
