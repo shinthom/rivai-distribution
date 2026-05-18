@@ -1,0 +1,114 @@
+name: Launcher release
+
+# Triggered manually with version + buildId inputs.
+# Builds the launcher on macOS (arm64) and Windows (x64), uploads zips
+# to R2, and refreshes manifest/launcher/<channel>.json.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Launcher version (e.g. 0.0.2)"
+        required: true
+      build_id:
+        description: "Build ID (e.g. 2026.05.18.001)"
+        required: true
+      channel:
+        description: "Channel"
+        required: true
+        default: dev
+        type: choice
+        options: [dev, qa, live]
+
+permissions:
+  contents: read
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: Distribution/launcher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npm run tauri build -- --bundles app
+      - name: ditto compress .app
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          ditto -c -k --sequesterRsrc --keepParent \
+            "src-tauri/target/release/bundle/macos/Rivai Launcher.app" \
+            "out/rivai-launcher_${{ inputs.version }}_mac_arm64.zip"
+          ls -lh out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-mac
+          path: Distribution/launcher/out/*.zip
+          retention-days: 7
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: Distribution/launcher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install
+      - run: npm run tauri build -- --bundles nsis
+      - name: Compress launcher to zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          $exe = Get-ChildItem -Recurse src-tauri/target/release/bundle/nsis -Filter "*.exe" | Select-Object -First 1
+          if (-not $exe) { throw "no installer found" }
+          Compress-Archive -Path $exe.FullName -DestinationPath "out/rivai-launcher_${{ inputs.version }}_win64_x64.zip" -Force
+          Get-ChildItem out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: launcher-windows
+          path: Distribution/launcher/out/*.zip
+          retention-days: 7
+
+  publish:
+    needs: [build-mac, build-windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: launcher-mac
+          path: artifacts/mac
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: launcher-windows
+          path: artifacts/win
+
+      - name: Install wrangler
+        run: npm install -g wrangler
+
+      - name: Publish launcher to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          MAC_ZIP=$(ls artifacts/mac/*.zip | head -1)
+          WIN_ZIP=$(ls artifacts/win/*.zip | head -1)
+          chmod +x Distribution/scripts/*.sh
+          ./Distribution/scripts/release-launcher.sh \
+            --version  "${{ inputs.version }}" \
+            --build-id "${{ inputs.build_id }}" \
+            --channel  "${{ inputs.channel }}" \
+            --mac "$MAC_ZIP" \
+            --win "$WIN_ZIP"

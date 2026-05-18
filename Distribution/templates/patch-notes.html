@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patch Notes {{VERSION}} · Rivai</title>
+  <meta name="description" content="Rivai {{VERSION}} 빌드 패치노트" />
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../../">Rivai</a>
+    <span class="brand-sub">Patch Notes</span>
+  </header>
+
+  <main class="container">
+    <nav class="crumbs"><a href="../../">Home</a> · <a href="../">Patch Notes</a> · {{VERSION}}</nav>
+
+    <article class="doc">
+      <header class="doc-header">
+        <h1>{{VERSION}}</h1>
+        <span class="badge">{{CHANNEL}}</span>
+        <div class="doc-meta">
+          <span>Build ID: <strong>{{BUILD_ID}}</strong></span>
+          <span>배포일: <strong>{{RELEASED_AT}}</strong></span>
+        </div>
+      </header>
+
+      <section class="doc-section">
+        <h2>Test Focus</h2>
+        {{TEST_FOCUS_HTML}}
+      </section>
+
+      <section class="doc-section">
+        <h2>Changes</h2>
+        {{CHANGES_HTML}}
+      </section>
+
+      <section class="doc-section">
+        <h2>Fixes</h2>
+        {{FIXES_HTML}}
+      </section>
+
+      <section class="doc-section">
+        <h2>Known Issues at Release</h2>
+        <p>최신 미해결 이슈는 <a href="../../known-issues/">Known Issues 페이지</a>를 참고하세요.</p>
+        {{KNOWN_ISSUES_HTML}}
+      </section>
+
+      <footer class="doc-footer">
+        <span>이전 빌드: {{PREV_BUILD_HTML}}</span>
+        <span><a href="https://rivai-portal.pages.dev/feedback">피드백 보내기</a></span>
+      </footer>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <span>Rivai · {{CHANNEL}} Channel</span>
+    <span><a href="../">전체 패치노트 목록</a></span>
+  </footer>
+</body>
+</html>
