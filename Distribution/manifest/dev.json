@@ -2,8 +2,8 @@
   "project": "Rivai",
   "channel": "dev",
   "latestVersion": "0.1.0-dev",
-  "buildId": "2026.05.18.002",
-  "releasedAt": "2026-05-18T19:07:32+09:00",
+  "buildId": "2026.05.18.003",
+  "releasedAt": "2026-05-18T20:16:54+09:00",
   "client": {
     "win64": {
       "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/client/win64/rivai_client_0.1.0-dev_dev_win64.zip",
@@ -13,8 +13,8 @@
     },
     "mac": {
       "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/client/mac/rivai_client_0.1.0-dev_dev_mac.zip",
-      "sha256": "cb538ac2bf1306dea862ff3abe82ccf5bdd548773b91fdfc16219db49c019a1d",
-      "sizeBytes": 510487548,
+      "sha256": "d81f111c59c6722760b644a7acf1d022e20e22a36416756f4a35b05050af351c",
+      "sizeBytes": 574274751,
       "executable": "Rivai.app"
     }
   },
