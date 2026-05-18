@@ -35,6 +35,11 @@
     ],
     "category": "public.app-category.games",
     "shortDescription": "Rivai test launcher",
-    "longDescription": "Downloads, verifies and runs the latest Rivai build from the dev channel."
+    "longDescription": "Downloads, verifies and runs the latest Rivai build from the dev channel.",
+    "macOS": {
+      "signingIdentity": "Developer ID Application: GEONWOO SHIN (GSN6N6WBV9)",
+      "hardenedRuntime": true,
+      "minimumSystemVersion": "12.0"
+    }
   }
 }

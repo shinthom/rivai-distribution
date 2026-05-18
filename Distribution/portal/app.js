@@ -50,12 +50,21 @@ function renderLauncher(lm) {
   const win = lm.launcher?.win64;
 
   const targets = [];
-  if (mac) targets.push(mac.arch === 'arm64' ? 'macOS (Apple Silicon)' : `macOS (${mac.arch})`);
+  if (mac) {
+    const macLabel = mac.arch === 'arm64' ? 'macOS (Apple Silicon)' : `macOS (${mac.arch})`;
+    targets.push(mac.format === 'dmg' ? `${macLabel}, DMG` : macLabel);
+  }
   if (win) targets.push(win.arch === 'x64' ? 'Windows (x64)' : `Windows (${win.arch})`);
   fillText('launcherTarget', targets.join(' / ') || '—');
 
   applyPlatform('downloadLauncherMac', 'sizeLauncherMac', mac);
   applyPlatform('downloadLauncherWin64', 'sizeLauncherWin64', win);
+
+  // Mac DMG일 때 카드 라벨에 명시
+  if (mac?.format === 'dmg') {
+    const macLabelEl = document.querySelector('[data-slot="downloadLauncherMac"] .dl-label');
+    if (macLabelEl) macLabelEl.textContent = 'Download Launcher (Mac · DMG)';
+  }
 }
 
 async function fetchManifest(url) {
