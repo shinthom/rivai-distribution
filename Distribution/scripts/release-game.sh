@@ -97,7 +97,8 @@ print(json.dumps({
             "downloadUrl": "${MAC_URL}",
             "sha256": "${MAC_SHA}",
             "sizeBytes": ${MAC_SIZE},
-            "executable": "Rivai.app"
+            "executable": "Rivai.app",
+            "arch": "universal"
         }
     },
     "server": {
