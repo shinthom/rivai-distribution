@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_opener::OpenerExt;
 use tokio::fs;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -115,6 +115,8 @@ pub struct InstallState {
     #[serde(rename = "installPath")]
     pub install_path: PathBuf,
     pub executable: String,
+    #[serde(default)]
+    pub server: Option<ServerInfo>,
     #[serde(rename = "lastChecked")]
     pub last_checked: Option<DateTime<Utc>>,
     #[serde(rename = "lastError")]
@@ -267,6 +269,7 @@ async fn download_and_install(
         installed_at: Utc::now(),
         install_path: install_path.clone(),
         executable: build.executable,
+        server: Some(manifest.server.clone()),
         last_checked: Some(Utc::now()),
         last_error: None,
     };
@@ -325,30 +328,71 @@ async fn launch_game(app: AppHandle) -> Result<()> {
         .await?
         .ok_or_else(|| LauncherError::Launch("not installed".to_string()))?;
 
-    // Locate executable. On Mac the executable is "Rivai.app"; we resolve to its
-    // CFBundleExecutable via `open -a` for simplicity.
     let exe_path = locate_executable(&state.install_path, &state.executable)?;
 
-    let mut cmd = if cfg!(target_os = "macos") && exe_path.extension().and_then(|s| s.to_str()) == Some("app") {
-        // `open` does not block and forwards extra args after `--args`.
-        let mut c = tokio::process::Command::new("open");
-        c.args(["-a"]).arg(&exe_path);
-        c
-    } else {
-        tokio::process::Command::new(&exe_path)
-    };
+    // On macOS we spawn the .app's inner Mach-O directly. `open` / `open -a`
+    // routes through LaunchServices, which silently mis-dispatches when
+    // multiple .app bundles share a CFBundleIdentifier — UE projects ship
+    // "com.YourCompany.<Project>" by default, so every cooked build collides.
+    let spawn_target = resolve_spawn_target(&exe_path).ok_or_else(|| {
+        LauncherError::Launch(format!(
+            "no launchable binary under {}",
+            exe_path.display()
+        ))
+    })?;
 
-    // Pass server info as args. The actual UE client needs to parse these
-    // (this is a placeholder while the binary is still dummy).
-    // Read manifest server info from install state's manifestUrl is overkill here;
-    // instead persist server info into launcher.json in a later iteration.
-    // For v0 we just spawn the executable.
+    let mut cmd = tokio::process::Command::new(&spawn_target);
+    cmd.current_dir("/"); // mimic LaunchServices: cwd=/ on .app launch
+    // UE clients auto-connect when the first arg is HOST:PORT. Pull from the
+    // manifest snapshot persisted at install time so Play goes straight to the
+    // dedicated test server without the user typing anything.
+    if let Some(srv) = state.server.as_ref() {
+        cmd.arg(format!("{}:{}", srv.host, srv.port));
+    }
+    cmd.stdout(Stdio::null()).stderr(Stdio::piped());
 
-    cmd.stdout(Stdio::null()).stderr(Stdio::null());
-
-    cmd.spawn()
+    let mut child = cmd
+        .spawn()
         .map_err(|e| LauncherError::Launch(format!("spawn failed: {e}")))?;
+
+    // If the child exits within 1.5s, treat as launch failure and surface
+    // stderr so the UI shows a real reason instead of "nothing happened".
+    if let Ok(Ok(status)) =
+        tokio::time::timeout(std::time::Duration::from_millis(1500), child.wait()).await
+    {
+        if !status.success() {
+            let mut buf = String::new();
+            if let Some(mut stderr) = child.stderr.take() {
+                let _ = stderr.read_to_string(&mut buf).await;
+            }
+            return Err(LauncherError::Launch(format!(
+                "exited early (status={:?}): {}",
+                status.code(),
+                buf.trim()
+            )));
+        }
+    }
     Ok(())
+}
+
+fn resolve_spawn_target(exe_path: &Path) -> Option<PathBuf> {
+    if cfg!(target_os = "macos") && exe_path.extension().and_then(|s| s.to_str()) == Some("app") {
+        let macos_dir = exe_path.join("Contents").join("MacOS");
+        // Convention: Foo.app → Contents/MacOS/Foo. Fall back to first file under MacOS/.
+        if let Some(stem) = exe_path.file_stem().and_then(|s| s.to_str()) {
+            let cand = macos_dir.join(stem);
+            if cand.is_file() {
+                return Some(cand);
+            }
+        }
+        std::fs::read_dir(&macos_dir)
+            .ok()?
+            .filter_map(|e| e.ok())
+            .find(|e| e.file_type().ok().map(|t| t.is_file()).unwrap_or(false))
+            .map(|e| e.path())
+    } else {
+        Some(exe_path.to_path_buf())
+    }
 }
 
 fn locate_executable(install_path: &Path, executable: &str) -> Result<PathBuf> {
