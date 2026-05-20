@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rivai · Tester Portal</title>
-  <meta name="description" content="Rivai 테스터 포털 — 최신 빌드 다운로드와 피드백 진입점" />
+  <meta name="description" content="Rivai Tester Portal — latest build downloads and feedback entry point" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -15,16 +15,16 @@
 
   <main class="container">
     <section class="hero" aria-labelledby="latest-heading">
-      <h1 id="latest-heading">최신 빌드</h1>
+      <h1 id="latest-heading">Latest Build</h1>
 
       <dl class="meta" aria-live="polite">
-        <div><dt>Version</dt><dd data-slot="latestVersion">로딩 중…</dd></div>
+        <div><dt>Version</dt><dd data-slot="latestVersion">Loading…</dd></div>
         <div><dt>Build ID</dt><dd data-slot="buildId">—</dd></div>
-        <div><dt>배포일</dt><dd data-slot="releasedAt">—</dd></div>
+        <div><dt>Released</dt><dd data-slot="releasedAt">—</dd></div>
         <div><dt>Server</dt><dd data-slot="serverName">—</dd></div>
       </dl>
 
-      <div class="downloads" role="group" aria-label="플랫폼별 다운로드">
+      <div class="downloads" role="group" aria-label="Downloads by platform">
         <a class="download-card" data-slot="downloadWin64" href="#" rel="noopener">
           <span class="dl-label">Download for Windows</span>
           <span class="dl-meta" data-slot="sizeWin64">—</span>
@@ -36,24 +36,24 @@
       </div>
 
       <p class="hint">
-        압축을 풀고 <code data-slot="executableHint">Rivai.exe</code>를 실행하세요.
-        실행 전 <a data-slot="installGuideLink" href="#">설치 가이드</a>를 한 번 읽어두면 좋습니다.
+        Unzip and launch <code data-slot="executableHint">Rivai.exe</code>.
+        Skim the <a data-slot="installGuideLink" href="#">install guide</a> before you run it for the first time.
       </p>
 
       <p class="error" data-slot="error" hidden></p>
     </section>
 
     <section class="hero" aria-labelledby="launcher-heading">
-      <h1 id="launcher-heading">런처 (권장)</h1>
-      <p class="hint">런처를 쓰면 manifest를 자동으로 확인해 최신 빌드를 다운로드·검증·실행합니다. 다음 빌드부터는 새로 zip을 받지 않아도 됩니다.</p>
+      <h1 id="launcher-heading">Launcher (Recommended)</h1>
+      <p class="hint">The launcher checks the manifest automatically and downloads, verifies, and runs the latest build for you — no more grabbing fresh zips by hand.</p>
 
       <dl class="meta" aria-live="polite">
         <div><dt>Launcher Version</dt><dd data-slot="launcherVersion">—</dd></div>
         <div><dt>Build ID</dt><dd data-slot="launcherBuildId">—</dd></div>
-        <div><dt>대상</dt><dd data-slot="launcherTarget">macOS / Windows</dd></div>
+        <div><dt>Targets</dt><dd data-slot="launcherTarget">macOS / Windows</dd></div>
       </dl>
 
-      <div class="downloads" role="group" aria-label="런처 다운로드">
+      <div class="downloads" role="group" aria-label="Launcher downloads">
         <a class="download-card" data-slot="downloadLauncherMac" href="#" rel="noopener">
           <span class="dl-label">Download Launcher (Mac · arm64)</span>
           <span class="dl-meta" data-slot="sizeLauncherMac">—</span>
@@ -65,12 +65,12 @@
       </div>
 
       <p class="hint">
-        첫 실행 시 macOS Gatekeeper가 막을 수 있습니다 — Finder에서 우클릭 → "열기"로 한 번 허용하세요. 자세한 내용은
-        <a data-slot="knownIssuesLink2" href="#">Known Issues</a>를 참고하세요.
+        macOS Gatekeeper may block the first launch — right-click in Finder → "Open" to allow it once. See
+        <a data-slot="knownIssuesLink2" href="#">Known Issues</a> for details.
       </p>
     </section>
 
-    <section class="links" aria-label="보조 링크">
+    <section class="links" aria-label="Auxiliary links">
       <a data-slot="patchNotesLink" href="#">Patch Notes</a>
       <a data-slot="knownIssuesLink" href="#">Known Issues</a>
       <a data-slot="installGuideLink2" href="#">Install Guide</a>

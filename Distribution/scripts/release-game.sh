@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
-# release-game.sh — publish a game build (Windows + Mac zips) and refresh
+# release-game.sh — publish a game build (Mac required, Windows optional) and refresh
 # the game manifest, patch notes, and portal in a single command.
+#
+# M0: Windows client is still TBD — pass --client-win64 only once a real build exists.
+# Without it, the portal shows the Windows card as "Coming soon" and the launcher manifest
+# simply omits client.win64.
 #
 # Usage:
 #   ./release-game.sh \
 #     --version 0.0.2-dev \
 #     --build-id 2026.05.18.003 \
 #     --channel dev \
-#     --client-win64 path/to/win64.zip \
 #     --client-mac   path/to/mac.zip   \
+#     [--client-win64 path/to/win64.zip] \
 #     [--notes path/to/notes.json] \
 #     [--skip-portal-deploy] \
 #     [--dry-run]
@@ -47,8 +51,10 @@ done
 
 [[ -n "$VERSION"  ]] || die "--version required"
 [[ -n "$BUILD_ID" ]] || die "--build-id required"
-[[ -n "$WIN_ZIP" && -f "$WIN_ZIP" ]] || die "--client-win64 must be an existing zip"
 [[ -n "$MAC_ZIP" && -f "$MAC_ZIP" ]] || die "--client-mac must be an existing zip"
+if [[ -n "$WIN_ZIP" ]]; then
+  [[ -f "$WIN_ZIP" ]] || die "--client-win64 file not found: $WIN_ZIP"
+fi
 
 require_command wrangler shasum python3
 
@@ -58,19 +64,26 @@ PORTAL_DIR="$DIST_ROOT/Distribution/portal"
 RELEASED_AT=$(iso_now)
 RELEASED_DATE=$(date "+%Y-%m-%d")
 
-WIN_SHA=$(compute_sha256 "$WIN_ZIP"); WIN_SIZE=$(file_size_bytes "$WIN_ZIP")
 MAC_SHA=$(compute_sha256 "$MAC_ZIP"); MAC_SIZE=$(file_size_bytes "$MAC_ZIP")
-log "win64: $(human_size "$WIN_SIZE") $WIN_SHA"
 log "mac:   $(human_size "$MAC_SIZE") $MAC_SHA"
+if [[ -n "$WIN_ZIP" ]]; then
+  WIN_SHA=$(compute_sha256 "$WIN_ZIP"); WIN_SIZE=$(file_size_bytes "$WIN_ZIP")
+  log "win64: $(human_size "$WIN_SIZE") $WIN_SHA"
+else
+  log "win64: (skipped — no --client-win64; manifest will omit client.win64)"
+fi
 
 # ---- 1. Upload zips ---------------------------------------------------
-WIN_KEY="builds/${CHANNEL}/client/win64/rivai_client_${VERSION}_${CHANNEL}_win64.zip"
 MAC_KEY="builds/${CHANNEL}/client/mac/rivai_client_${VERSION}_${CHANNEL}_mac.zip"
-r2_put_object "$WIN_KEY" "$WIN_ZIP" "application/zip"
 r2_put_object "$MAC_KEY" "$MAC_ZIP" "application/zip"
-
-WIN_URL=$(r2_public_url "$WIN_KEY")
 MAC_URL=$(r2_public_url "$MAC_KEY")
+
+WIN_URL=""
+if [[ -n "$WIN_ZIP" ]]; then
+  WIN_KEY="builds/${CHANNEL}/client/win64/rivai_client_${VERSION}_${CHANNEL}_win64.zip"
+  r2_put_object "$WIN_KEY" "$WIN_ZIP" "application/zip"
+  WIN_URL=$(r2_public_url "$WIN_KEY")
+fi
 
 # ---- 2. Write game manifest ------------------------------------------
 STAGE_DIR="$DIST_ROOT/Distribution/staging/game/$VERSION"
@@ -78,37 +91,47 @@ mkdir -p "$STAGE_DIR"
 MANIFEST_OUT="$STAGE_DIR/dev.json"
 PATCH_NOTES_URL="https://rivai-portal.pages.dev/patch-notes/${VERSION}/"
 
-python3 - <<PY > "$MANIFEST_OUT"
-import json
+WIN_URL="$WIN_URL" WIN_SHA="${WIN_SHA:-}" WIN_SIZE="${WIN_SIZE:-}" \
+MAC_URL="$MAC_URL" MAC_SHA="$MAC_SHA" MAC_SIZE="$MAC_SIZE" \
+VERSION="$VERSION" BUILD_ID="$BUILD_ID" CHANNEL="$CHANNEL" \
+RELEASED_AT="$RELEASED_AT" SERVER_NAME="$SERVER_NAME" \
+SERVER_HOST="$SERVER_HOST" SERVER_PORT="$SERVER_PORT" \
+PATCH_NOTES_URL="$PATCH_NOTES_URL" \
+python3 - <<'PY' > "$MANIFEST_OUT"
+import json, os
+
+client = {
+    "mac": {
+        "downloadUrl": os.environ["MAC_URL"],
+        "sha256":      os.environ["MAC_SHA"],
+        "sizeBytes":   int(os.environ["MAC_SIZE"]),
+        "executable":  "Rivai.app",
+        "arch":        "universal",
+    }
+}
+if os.environ.get("WIN_URL"):
+    client["win64"] = {
+        "downloadUrl": os.environ["WIN_URL"],
+        "sha256":      os.environ["WIN_SHA"],
+        "sizeBytes":   int(os.environ["WIN_SIZE"]),
+        "executable":  "Rivai.exe",
+    }
+
 print(json.dumps({
-    "project": "Rivai",
-    "channel": "${CHANNEL}",
-    "latestVersion": "${VERSION}",
-    "buildId": "${BUILD_ID}",
-    "releasedAt": "${RELEASED_AT}",
-    "client": {
-        "win64": {
-            "downloadUrl": "${WIN_URL}",
-            "sha256": "${WIN_SHA}",
-            "sizeBytes": ${WIN_SIZE},
-            "executable": "Rivai.exe"
-        },
-        "mac": {
-            "downloadUrl": "${MAC_URL}",
-            "sha256": "${MAC_SHA}",
-            "sizeBytes": ${MAC_SIZE},
-            "executable": "Rivai.app",
-            "arch": "universal"
-        }
-    },
+    "project":        "Rivai",
+    "channel":        os.environ["CHANNEL"],
+    "latestVersion":  os.environ["VERSION"],
+    "buildId":        os.environ["BUILD_ID"],
+    "releasedAt":     os.environ["RELEASED_AT"],
+    "client":         client,
     "server": {
-        "name": "${SERVER_NAME}",
-        "host": "${SERVER_HOST}",
-        "port": ${SERVER_PORT}
+        "name": os.environ["SERVER_NAME"],
+        "host": os.environ["SERVER_HOST"],
+        "port": int(os.environ["SERVER_PORT"]),
     },
-    "patchNotesUrl": "${PATCH_NOTES_URL}",
-    "feedbackUrl": "https://rivai-portal.pages.dev/feedback",
-    "knownIssuesUrl": "https://rivai-portal.pages.dev/known-issues/"
+    "patchNotesUrl":  os.environ["PATCH_NOTES_URL"],
+    "feedbackUrl":    "https://rivai-portal.pages.dev/feedback",
+    "knownIssuesUrl": "https://rivai-portal.pages.dev/known-issues/",
 }, indent=2, ensure_ascii=False))
 PY
 
@@ -160,7 +183,7 @@ else
   mkdir -p "$(dirname "$LATEST_HTML")"
   cat > "$LATEST_HTML" <<HTML
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="refresh" content="0; url=../${VERSION}/" />
@@ -168,7 +191,7 @@ else
   <title>Latest patch notes — redirecting…</title>
 </head>
 <body>
-  <p>최신 패치노트로 이동합니다. 자동 이동되지 않으면 <a href="../${VERSION}/">여기를 클릭</a>하세요.</p>
+  <p>Redirecting to the latest patch notes. If you aren't redirected automatically, <a href="../${VERSION}/">click here</a>.</p>
 </body>
 </html>
 HTML
@@ -177,7 +200,7 @@ fi
 
 # ---- 6. Portal deploy -------------------------------------------------
 if [[ "$SKIP_PORTAL" == "1" ]]; then
-  log "--skip-portal-deploy 지정. portal 재배포를 건너뜁니다."
+  log "--skip-portal-deploy specified; skipping portal redeploy."
 else
   if is_dry_run; then
     printf '[dry  ] wrangler pages deploy %s --project-name=rivai-portal --branch=main --commit-dirty=true\n' "$PORTAL_DIR" >&2

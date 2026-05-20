@@ -6,7 +6,7 @@ const LAUNCHER_MANIFEST_URL =
 async function main() {
   fillText('manifestSource', MANIFEST_URL);
 
-  // 두 manifest를 병렬 fetch. 런처 manifest는 실패해도 게임 다운로드 흐름은 계속.
+  // Fetch both manifests in parallel. The game download flow keeps working even if the launcher manifest fails.
   const [gameRes, launcherRes] = await Promise.allSettled([
     fetchManifest(MANIFEST_URL),
     fetchManifest(LAUNCHER_MANIFEST_URL),
@@ -22,7 +22,8 @@ async function main() {
   fillText('releasedAt', formatDate(m.releasedAt));
   fillText('serverName', m.server?.name ?? '—');
 
-  applyPlatform('downloadWin64', 'sizeWin64', m.client?.win64);
+  // M0: the Windows client isn't ready yet. Windows testers must use the launcher — direct downloads are disabled.
+  applyPlatform('downloadWin64', 'sizeWin64', null, { unavailableLabel: 'Coming soon', labelSuffix: ' · Coming soon' });
   applyPlatform('downloadMac', 'sizeMac', m.client?.mac);
 
   setLink('patchNotesLink', m.patchNotesUrl);
@@ -33,12 +34,12 @@ async function main() {
   highlightDetectedPlatform(m);
   setExecutableHint(m);
 
-  // 런처 카드
+  // Launcher card
   if (launcherRes.status === 'fulfilled') {
     renderLauncher(launcherRes.value);
   } else {
     applyPlatform('downloadLauncherMac', 'sizeLauncherMac', null);
-    fillText('launcherVersion', '런처 정보를 불러오지 못함');
+    fillText('launcherVersion', 'Failed to load launcher info');
   }
 }
 
@@ -60,7 +61,7 @@ function renderLauncher(lm) {
   applyPlatform('downloadLauncherMac', 'sizeLauncherMac', mac);
   applyPlatform('downloadLauncherWin64', 'sizeLauncherWin64', win);
 
-  // Mac DMG일 때 카드 라벨에 명시
+  // Spell out DMG in the Mac launcher label when applicable.
   if (mac?.format === 'dmg') {
     const macLabelEl = document.querySelector('[data-slot="downloadLauncherMac"] .dl-label');
     if (macLabelEl) macLabelEl.textContent = 'Download Launcher (Mac · DMG)';
@@ -73,7 +74,7 @@ async function fetchManifest(url) {
   return res.json();
 }
 
-function applyPlatform(linkSlot, sizeSlot, platform) {
+function applyPlatform(linkSlot, sizeSlot, platform, opts = {}) {
   const linkEl = slot(linkSlot);
   const sizeEl = slot(sizeSlot);
   if (!platform || !platform.downloadUrl) {
@@ -81,8 +82,15 @@ function applyPlatform(linkSlot, sizeSlot, platform) {
       linkEl.classList.add('is-disabled');
       linkEl.removeAttribute('href');
       linkEl.setAttribute('aria-disabled', 'true');
+      if (opts.labelSuffix) {
+        const labelEl = linkEl.querySelector('.dl-label');
+        if (labelEl && !labelEl.dataset.suffixApplied) {
+          labelEl.textContent = labelEl.textContent + opts.labelSuffix;
+          labelEl.dataset.suffixApplied = '1';
+        }
+      }
     }
-    if (sizeEl) sizeEl.textContent = '미지원';
+    if (sizeEl) sizeEl.textContent = opts.unavailableLabel ?? 'Unavailable';
     return;
   }
   if (linkEl) {
@@ -131,7 +139,7 @@ function formatDate(iso) {
   if (!iso) return '—';
   try {
     const d = new Date(iso);
-    return d.toLocaleString('ko-KR', {
+    return d.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -165,7 +173,7 @@ function showError(message) {
   const el = slot('error');
   if (!el) return;
   el.hidden = false;
-  el.textContent = `오류: ${message}. 잠시 후 다시 시도하거나 피드백 채널에 알려주세요.`;
+  el.textContent = `Error: ${message}. Try again in a moment or report it in the feedback channel.`;
 }
 
 main().catch((err) => {

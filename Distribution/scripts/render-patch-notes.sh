@@ -79,12 +79,12 @@ notes = json.loads(src)
 def ul(items):
     items = [i for i in (items or []) if str(i).strip()]
     if not items:
-        return '<p class="doc-section empty" style="padding:0;margin:0">해당 없음.</p>'
+        return '<p class="doc-section empty" style="padding:0;margin:0">Nothing yet.</p>'
     return '<ul>' + ''.join(f'<li>{html.escape(i)}</li>' for i in items) + '</ul>'
 
 def prev_link(prev):
     if not prev:
-        return '<em>없음</em>'
+        return '<em>None</em>'
     p = html.escape(prev)
     return f'<a href="../{p}/">{p}</a>'
 

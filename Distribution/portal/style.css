@@ -101,7 +101,7 @@ code {
   box-shadow: 0 0 0 2px rgba(106, 169, 255, 0.18);
 }
 .download-card.is-recommended .dl-label::after {
-  content: " · 추천";
+  content: " · Recommended";
   color: var(--accent);
   font-weight: 500;
 }
