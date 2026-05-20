@@ -36,3 +36,9 @@ Thumbs.db
 .omc/
 .omx/
 .claude/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
