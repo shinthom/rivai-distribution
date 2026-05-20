@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rivai 배포 파이프라인 — 팀 발표</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --surface: #131722;
+    --surface-2: #1a2030;
+    --border: #283044;
+    --text: #e6e9f2;
+    --muted: #8a93a8;
+    --accent: #6aa7ff;
+    --aws: #ff9900;
+    --cf: #f38020;
+    --pages: #4caf6d;
+    --r2: #f0a360;
+    --workers: #6aa7ff;
+    --user: #b58bff;
+    --dev: #5dd5c4;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard,
+                 "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    line-height: 1.55;
+    overflow: hidden;
+    height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .deck { position: relative; width: 100vw; height: 100vh; }
+
+  .slide {
+    position: absolute; inset: 0;
+    padding: 72px 88px 88px;
+    opacity: 0; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: center;
+    transition: opacity 0.25s ease;
+    overflow: hidden;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  .eyebrow {
+    color: var(--accent);
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin: 0 0 18px;
+  }
+  .slide h1 {
+    font-size: 64px; font-weight: 700;
+    letter-spacing: -0.025em; line-height: 1.08;
+    margin: 0 0 18px;
+  }
+  .slide h2 {
+    font-size: 46px; font-weight: 700;
+    letter-spacing: -0.02em; line-height: 1.1;
+    margin: 0 0 28px;
+  }
+  .slide h3 { font-size: 22px; margin: 0 0 8px; font-weight: 700; }
+  .slide p { font-size: 19px; color: var(--text); margin: 0 0 12px; }
+  .lede { font-size: 24px; color: var(--muted); max-width: 900px; }
+  .big-text { font-size: 26px; line-height: 1.5; max-width: 980px; color: #d4d9e8; }
+
+  .tag {
+    display: inline-block;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted);
+    font-weight: 600;
+  }
+  .tag.dev { color: var(--dev); border-color: var(--dev); }
+  .tag.aws { color: var(--aws); border-color: var(--aws); }
+  .tag.r2 { color: var(--r2); border-color: var(--r2); }
+  .tag.pages { color: var(--pages); border-color: var(--pages); }
+  .tag.workers { color: var(--workers); border-color: var(--workers); }
+  .tag.user { color: var(--user); border-color: var(--user); }
+
+  /* ---- Title slide ---- */
+  .slide.title { align-items: center; text-align: center; }
+  .slide.title h1 { font-size: 84px; }
+  .slide.title .lede { font-size: 22px; }
+  .slide.title .meta {
+    margin-top: 36px; color: var(--muted); font-size: 14px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* ---- Card grids ---- */
+  .grid-2 {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 28px; max-width: 1180px; margin: 0 auto;
+  }
+  .grid-3 {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 22px; max-width: 1180px; margin: 0 auto;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+  }
+  .card.dev { border-top: 4px solid var(--dev); }
+  .card.aws { border-top: 4px solid var(--aws); }
+  .card.r2 { border-top: 4px solid var(--r2); }
+  .card.pages { border-top: 4px solid var(--pages); }
+  .card.workers { border-top: 4px solid var(--workers); }
+  .card.user { border-top: 4px solid var(--user); }
+  .card h3 { font-size: 20px; }
+  .card .sub {
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin: 0 0 14px; font-weight: 600;
+  }
+  .card ul { margin: 6px 0 0; padding-left: 20px; color: #cfd6ea; }
+  .card ul li { margin: 6px 0; font-size: 16px; }
+  .card .mono { font-size: 13px; color: #b7c0d7; }
+  .card .big {
+    font-size: 30px; font-weight: 700;
+    margin: 4px 0 14px; letter-spacing: -0.01em;
+  }
+
+  /* ---- Analogy slide ---- */
+  .analogy {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 32px; max-width: 1180px; margin: 0 auto;
+  }
+  .lane-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 26px 28px;
+  }
+  .lane-card .sub {
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 700; margin: 0 0 18px;
+  }
+  .flow {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .flow .pill {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    flex: 1; min-width: 0;
+  }
+  .flow .pill .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .flow .pill .name { font-size: 15px; font-weight: 600; margin-top: 4px; }
+  .flow .arrow { color: var(--muted); font-size: 20px; }
+
+  /* ---- Step number ---- */
+  .step-number {
+    font-size: 18px; color: var(--accent);
+    font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; margin: 0 0 12px;
+  }
+
+  /* ---- Code box ---- */
+  .codebox {
+    background: #0e1320;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 26px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 16px;
+    color: #cfd6ea;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 980px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .codebox.small { font-size: 14px; }
+  .codebox .comment { color: #6f7c95; }
+  .codebox .accent { color: var(--accent); }
+  .codebox .aws { color: var(--aws); }
+  .codebox .r2 { color: var(--r2); }
+  .codebox .pages { color: var(--pages); }
+
+  /* ---- Numbered list ---- */
+  .numlist { counter-reset: nl; padding: 0; margin: 16px 0 0; list-style: none; }
+  .numlist li {
+    position: relative; padding: 12px 0 12px 56px;
+    border-top: 1px dashed var(--border);
+    font-size: 19px;
+  }
+  .numlist li:first-child { border-top: 0; }
+  .numlist li::before {
+    counter-increment: nl; content: counter(nl);
+    position: absolute; left: 0; top: 14px;
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--accent); font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .numlist li .why { display: block; font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+  /* ---- Architecture diagram slide ---- */
+  .arch-wrap { width: 100%; max-width: 1180px; margin: 0 auto; }
+  .arch-svg {
+    width: 100%; height: auto;
+    max-height: 70vh;
+    display: block;
+  }
+
+  /* ---- Footer / nav / progress ---- */
+  .progress {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 3px; background: rgba(255,255,255,0.04); z-index: 50;
+  }
+  .progress-bar {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--dev));
+    transition: width 0.3s ease;
+  }
+  .counter {
+    position: fixed; bottom: 22px; right: 28px;
+    font-size: 13px; color: var(--muted);
+    z-index: 50; letter-spacing: 0.08em;
+    font-feature-settings: "tnum";
+  }
+  .help {
+    position: fixed; bottom: 22px; left: 28px;
+    font-size: 12px; color: var(--muted);
+    z-index: 50; opacity: 0.55;
+  }
+  .help kbd {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px;
+    font-family: ui-monospace, monospace; font-size: 11px;
+    margin: 0 2px; color: #cfd6ea;
+  }
+  .nav-btn {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    width: 42px; height: 42px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted); font-size: 18px;
+    cursor: pointer; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+  .nav-prev { left: 20px; }
+  .nav-next { right: 20px; }
+
+  /* ---- Speaker notes ---- */
+  .notes {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(13, 16, 23, 0.97);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 18px 28px 24px;
+    color: #cfd6ea; font-size: 15px;
+    max-height: 36vh; overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 60;
+  }
+  .notes.show { transform: translateY(0); }
+  .notes .lbl {
+    color: var(--accent); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px; font-weight: 700;
+  }
+  .notes .note-body { display: none; }
+  .notes .note-body.active { display: block; }
+
+  /* ---- Highlight markers ---- */
+  .hl-aws { color: var(--aws); font-weight: 600; }
+  .hl-cf { color: var(--cf); font-weight: 600; }
+  .hl-r2 { color: var(--r2); font-weight: 600; }
+  .hl-pages { color: var(--pages); font-weight: 600; }
+
+  @media (max-width: 1100px) {
+    .slide { padding: 56px 64px; }
+    .slide h1 { font-size: 48px; }
+    .slide.title h1 { font-size: 60px; }
+    .slide h2 { font-size: 36px; }
+  }
+  @media (max-width: 760px) {
+    .slide { padding: 40px 32px 80px; }
+    .slide h1 { font-size: 34px; }
+    .slide.title h1 { font-size: 40px; }
+    .slide h2 { font-size: 26px; }
+    .slide h3 { font-size: 18px; }
+    .slide p { font-size: 15px; }
+    .grid-2, .grid-3, .analogy { grid-template-columns: 1fr; }
+    .nav-btn { width: 36px; height: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress"><div class="progress-bar" id="bar"></div></div>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================== -->
+  <!-- 1. TITLE                                       -->
+  <!-- ============================================== -->
+  <section class="slide title active" data-notes="안녕하세요. 오늘은 Rivai의 배포 파이프라인 전체를 설명드립니다. 개발자가 만든 게임이 어떻게 여러분 손까지 닿는지, 우리가 어떤 인프라를 쓰는지, 왜 그렇게 만들었는지를 12분 안에 다루겠습니다. 언리얼 엔진을 모르셔도 끝까지 따라오실 수 있도록 비유와 그림 위주로 준비했습니다.">
+    <p class="eyebrow">Rivai · 팀 공유</p>
+    <h1>빌드부터 사용자 손까지</h1>
+    <p class="lede">Rivai 배포 파이프라인 한 시간 만에 이해하기</p>
+    <p class="meta">2026 · Distribution Pipeline Overview</p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 2. ANALOGY — LoL 식 구조                        -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="롤 해보신 분이라면 익숙한 패턴입니다. 공식 사이트에서 라이엇 클라이언트를 받고, 그 클라이언트가 게임을 자동으로 받고 패치합니다. 우리 Rivai도 정확히 같은 3단 구조입니다. 사이트 → 런처 → 게임. 이 비유를 머리에 넣어두시면 오늘 발표를 따라오기 훨씬 쉽습니다.">
+    <p class="eyebrow">시작하기 전에 · 비유</p>
+    <h2>롤(LoL) 해보셨죠? 똑같은 구조입니다.</h2>
+
+    <div class="analogy">
+      <div class="lane-card">
+        <p class="sub" style="color: #c89b6f">LEAGUE OF LEGENDS</p>
+        <div class="flow">
+          <div class="pill">
+            <div class="label">웹사이트</div>
+            <div class="name">leagueoflegends.com</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="pill">
+            <div class="label">런처</div>
+            <div class="name">Riot Client</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="pill">
+            <div class="label">게임</div>
+            <div class="name">League of Legends</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lane-card">
+        <p class="sub" style="color: var(--accent)">RIVAI</p>
+        <div class="flow">
+          <div class="pill">
+            <div class="label">웹사이트</div>
+            <div class="name mono">rivai-portal.pages.dev</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="pill">
+            <div class="label">런처</div>
+            <div class="name">Rivai Launcher</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="pill">
+            <div class="label">게임</div>
+            <div class="name">Rivai.app</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 36px; color: var(--muted); font-size: 18px; text-align: center;">
+      익숙한 패턴 — 사용자가 새로 배울 게 없습니다.
+    </p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 3. 풀어야 할 문제                                -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="문제는 두 방향에서 옵니다. 개발자 입장에서는 매번 zip을 슬랙에 올리고 '이번 빌드 받으세요'를 반복할 수 없어요. 게임은 500MB가 넘고, 한 주에 여러 번 패치되니까요. 사용자 입장에서는 받자마자 곧바로 친구랑 만나야 하고, 패치는 자동이어야 합니다. 이 두 문제를 모두 풀어줘야 합니다.">
+    <p class="eyebrow">문제 정의</p>
+    <h2>우리가 풀어야 하는 두 가지 문제</h2>
+
+    <div class="grid-2">
+      <div class="card dev">
+        <p class="sub">DEVELOPER 측</p>
+        <h3 class="big">"어떻게 전달하지?"</h3>
+        <ul>
+          <li>500MB+ 게임을 매번 슬랙으로 보낼 수 없다</li>
+          <li>패치마다 zip 압축 + 공유 = 시간 낭비</li>
+          <li>서버는 누가 24시간 켜놓나?</li>
+          <li>버전 관리는?</li>
+        </ul>
+      </div>
+      <div class="card user">
+        <p class="sub">USER 측</p>
+        <h3 class="big">"어떻게 즐기지?"</h3>
+        <ul>
+          <li>받자마자 곧바로 플레이하고 싶다</li>
+          <li>패치는 자동으로 됐으면</li>
+          <li>친구가 어디에 있는지 모르겠다</li>
+          <li>Host? Join? IP? 모르겠고 그냥 Play하고 싶다</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 4. 전체 아키텍처 (다이어그램)                     -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="이 한 장에 우리가 사용하는 모든 인프라가 다 들어있습니다. 위쪽이 개발자, 가운데가 우리 두 클라우드, 아래가 사용자. 화살표는 데이터 흐름이고 색은 인프라 종류입니다. 복잡해 보이지만 다음 슬라이드부터 하나씩 풀어보겠습니다. 지금은 '두 클라우드를 쓰는구나' 정도만 가져가시면 됩니다.">
+    <p class="eyebrow">전체 그림</p>
+    <h2 style="margin-bottom: 20px;">이 한 장이 답입니다</h2>
+    <div class="arch-wrap">
+      <svg class="arch-svg" viewBox="0 0 1040 700" xmlns="http://www.w3.org/2000/svg"
+           role="img" aria-label="Rivai 인프라 아키텍처 다이어그램">
+        <defs>
+          <marker id="ah-aws" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#ff9900"/>
+          </marker>
+          <marker id="ah-r2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#f0a360"/>
+          </marker>
+          <marker id="ah-pages" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#4caf6d"/>
+          </marker>
+        </defs>
+
+        <!-- Developer -->
+        <g>
+          <rect x="370" y="20" width="300" height="100" rx="14" fill="#131722" stroke="#5dd5c4" stroke-width="2"/>
+          <text x="520" y="48" text-anchor="middle" fill="#5dd5c4" font-size="11" font-weight="700" letter-spacing="2">DEVELOPER · LOCAL macOS</text>
+          <text x="520" y="74" text-anchor="middle" fill="#e6e9f2" font-size="15" font-weight="600">게임 + 런처 빌드</text>
+          <text x="520" y="98" text-anchor="middle" fill="#8a93a8" font-size="12" font-family="ui-monospace, monospace">release-game.sh · release-launcher.sh</text>
+        </g>
+
+        <path d="M 420 120 Q 320 160 220 195" stroke="#ff9900" stroke-width="1.8" fill="none" marker-end="url(#ah-aws)"/>
+        <rect x="225" y="140" width="115" height="22" rx="4" fill="#10141e"/>
+        <text x="282" y="155" text-anchor="middle" fill="#ff9900" font-size="11" font-weight="600">rsync + systemd</text>
+
+        <path d="M 500 120 L 507 250" stroke="#f0a360" stroke-width="1.8" fill="none" marker-end="url(#ah-r2)"/>
+        <rect x="445" y="172" width="125" height="22" rx="4" fill="#10141e"/>
+        <text x="507" y="187" text-anchor="middle" fill="#f0a360" font-size="11" font-weight="600">wrangler / boto3</text>
+
+        <path d="M 620 120 Q 670 175 697 250" stroke="#4caf6d" stroke-width="1.8" fill="none" marker-end="url(#ah-pages)"/>
+        <rect x="630" y="160" width="145" height="22" rx="4" fill="#10141e"/>
+        <text x="702" y="175" text-anchor="middle" fill="#4caf6d" font-size="11" font-weight="600">wrangler pages deploy</text>
+
+        <!-- AWS -->
+        <g>
+          <rect x="40" y="200" width="320" height="280" rx="20" fill="#1a2030" stroke="#ff9900" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="200" y="228" text-anchor="middle" fill="#ff9900" font-size="11" font-weight="700" letter-spacing="2">AWS · ap-northeast-2 (SEOUL)</text>
+          <rect x="80" y="250" width="240" height="200" rx="10" fill="#0e1320" stroke="#ff9900" stroke-width="1.5"/>
+          <text x="200" y="278" text-anchor="middle" fill="#ff9900" font-size="11" font-weight="700" letter-spacing="2">EC2 INSTANCE</text>
+          <text x="200" y="302" text-anchor="middle" fill="#e6e9f2" font-size="14" font-family="ui-monospace, monospace">13.125.11.128:7777</text>
+          <line x1="100" y1="318" x2="300" y2="318" stroke="#283044"/>
+          <text x="200" y="342" text-anchor="middle" fill="#b7c0d7" font-size="12" font-family="ui-monospace, monospace">RivaiServer (ELF)</text>
+          <text x="200" y="362" text-anchor="middle" fill="#b7c0d7" font-size="11">Linux ARM64 · headless</text>
+          <text x="200" y="386" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">systemd Restart=always</text>
+          <text x="200" y="406" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">ufw 7777/udp + tcp</text>
+          <text x="200" y="432" text-anchor="middle" fill="#8a93a8" font-size="11">게임 서버 · 시뮬레이션 권위</text>
+        </g>
+
+        <!-- Cloudflare -->
+        <g>
+          <rect x="400" y="200" width="600" height="280" rx="20" fill="#1a2030" stroke="#f38020" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="700" y="228" text-anchor="middle" fill="#f38020" font-size="11" font-weight="700" letter-spacing="2">CLOUDFLARE · GLOBAL EDGE</text>
+
+          <rect x="420" y="250" width="175" height="205" rx="10" fill="#0e1320" stroke="#f0a360" stroke-width="1.5"/>
+          <text x="507" y="276" text-anchor="middle" fill="#f0a360" font-size="11" font-weight="700" letter-spacing="2">R2 BUCKET</text>
+          <text x="507" y="296" text-anchor="middle" fill="#e6e9f2" font-size="13" font-family="ui-monospace, monospace">rivai-dist</text>
+          <line x1="435" y1="312" x2="580" y2="312" stroke="#283044"/>
+          <text x="507" y="334" text-anchor="middle" fill="#b7c0d7" font-size="10.5" font-family="ui-monospace, monospace">builds/dev/client/...</text>
+          <text x="507" y="352" text-anchor="middle" fill="#b7c0d7" font-size="10.5" font-family="ui-monospace, monospace">builds/dev/launcher/...</text>
+          <text x="507" y="370" text-anchor="middle" fill="#b7c0d7" font-size="10.5" font-family="ui-monospace, monospace">manifest/dev.json</text>
+          <text x="507" y="388" text-anchor="middle" fill="#b7c0d7" font-size="10.5" font-family="ui-monospace, monospace">manifest/launcher/...</text>
+          <text x="507" y="415" text-anchor="middle" fill="#8a93a8" font-size="11">zip + JSON · S3 호환 API</text>
+          <text x="507" y="435" text-anchor="middle" fill="#8a93a8" font-size="11">300 MiB↑ 멀티파트 (K01)</text>
+
+          <rect x="610" y="250" width="175" height="205" rx="10" fill="#0e1320" stroke="#4caf6d" stroke-width="1.5"/>
+          <text x="697" y="276" text-anchor="middle" fill="#4caf6d" font-size="11" font-weight="700" letter-spacing="2">PAGES</text>
+          <text x="697" y="296" text-anchor="middle" fill="#e6e9f2" font-size="11.5" font-family="ui-monospace, monospace">rivai-portal.pages.dev</text>
+          <line x1="625" y1="312" x2="770" y2="312" stroke="#283044"/>
+          <text x="697" y="334" text-anchor="middle" fill="#b7c0d7" font-size="11">홈 · 다운로드</text>
+          <text x="697" y="352" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">patch-notes/</text>
+          <text x="697" y="370" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">known-issues/</text>
+          <text x="697" y="388" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">feedback</text>
+          <text x="697" y="415" text-anchor="middle" fill="#8a93a8" font-size="11">정적 호스팅</text>
+          <text x="697" y="435" text-anchor="middle" fill="#8a93a8" font-size="11">사용자 진입점</text>
+
+          <rect x="800" y="250" width="180" height="205" rx="10" fill="#0e1320" stroke="#6aa7ff" stroke-width="1.5"/>
+          <text x="890" y="276" text-anchor="middle" fill="#6aa7ff" font-size="11" font-weight="700" letter-spacing="2">WORKERS · STATIC</text>
+          <text x="890" y="296" text-anchor="middle" fill="#e6e9f2" font-size="12">road-to-rivai wiki</text>
+          <line x1="815" y1="312" x2="965" y2="312" stroke="#283044"/>
+          <text x="890" y="334" text-anchor="middle" fill="#b7c0d7" font-size="11">개발 위키</text>
+          <text x="890" y="352" text-anchor="middle" fill="#b7c0d7" font-size="11">Markdown → static</text>
+          <text x="890" y="370" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">npm run build</text>
+          <text x="890" y="388" text-anchor="middle" fill="#b7c0d7" font-size="11" font-family="ui-monospace, monospace">wrangler deploy</text>
+          <text x="890" y="415" text-anchor="middle" fill="#8a93a8" font-size="11">내부 문서</text>
+          <text x="890" y="435" text-anchor="middle" fill="#8a93a8" font-size="11">독립 배포 사이클</text>
+        </g>
+
+        <!-- User -->
+        <g>
+          <rect x="370" y="580" width="300" height="100" rx="14" fill="#131722" stroke="#b58bff" stroke-width="2"/>
+          <text x="520" y="608" text-anchor="middle" fill="#b58bff" font-size="11" font-weight="700" letter-spacing="2">END USER · Mac / Windows</text>
+          <text x="520" y="634" text-anchor="middle" fill="#e6e9f2" font-size="15" font-weight="600">Rivai Launcher → Rivai.app</text>
+          <text x="520" y="658" text-anchor="middle" fill="#8a93a8" font-size="12">포털 방문 → 런처 받기 → Play</text>
+        </g>
+
+        <path d="M 220 480 Q 320 540 410 580" stroke="#ff9900" stroke-width="1.8" fill="none" marker-end="url(#ah-aws)" stroke-dasharray="5 3"/>
+        <rect x="222" y="518" width="165" height="22" rx="4" fill="#10141e"/>
+        <text x="304" y="533" text-anchor="middle" fill="#ff9900" font-size="11" font-weight="600">UDP 7777 · 게임 트래픽</text>
+
+        <path d="M 507 455 L 500 580" stroke="#f0a360" stroke-width="1.8" fill="none" marker-end="url(#ah-r2)"/>
+        <rect x="425" y="510" width="165" height="22" rx="4" fill="#10141e"/>
+        <text x="507" y="525" text-anchor="middle" fill="#f0a360" font-size="11" font-weight="600">런처 · 게임 zip 다운로드</text>
+
+        <path d="M 697 455 Q 670 525 620 580" stroke="#4caf6d" stroke-width="1.8" fill="none" marker-end="url(#ah-pages)"/>
+        <rect x="618" y="510" width="115" height="22" rx="4" fill="#10141e"/>
+        <text x="675" y="525" text-anchor="middle" fill="#4caf6d" font-size="11" font-weight="600">포털 방문 (HTTPS)</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 5. WHY two clouds                              -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="왜 한 클라우드가 아니라 두 개를 쓸까요? 한 마디로 역할이 다르기 때문입니다. 게임 서버는 실시간 패킷을 받아야 하니까 항상 켜진 고정 IP가 필요합니다. 반면 게임 zip 파일은 한국, 일본, 미국 어디서 받아도 빠르게 받아야 하니까 전 세계에 캐시되어야 합니다. 한 인프라가 두 일을 다 잘하기는 어렵고, 비용도 비대칭이라 자연스럽게 분리됩니다.">
+    <p class="eyebrow">아키텍처 결정</p>
+    <h2>왜 클라우드를 두 개 쓰나?</h2>
+
+    <div class="grid-2">
+      <div class="card aws">
+        <p class="sub">AWS — 게임 서버 전용</p>
+        <h3 class="big">"항상 켜진 VM"</h3>
+        <ul>
+          <li><b>실시간 UDP</b> 트래픽을 받아야 함</li>
+          <li>한국 팀원 RTT(지연시간) 최소화 → Seoul 리전</li>
+          <li>고정 IP / 도메인이 필요</li>
+          <li>24시간 죽지 않아야 함 (systemd)</li>
+        </ul>
+      </div>
+      <div class="card r2" style="border-top-color: var(--cf)">
+        <p class="sub">CLOUDFLARE — 정적 자산 전부</p>
+        <h3 class="big">"전 세계 CDN"</h3>
+        <ul>
+          <li>500MB+ 게임 파일을 어디서나 빠르게</li>
+          <li><b>egress 비용 0</b> (R2의 핵심 장점)</li>
+          <li>웹사이트도 같이 (Pages, Workers)</li>
+          <li>S3 호환 API → 멀티파트 업로드 가능</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="margin-top: 32px; color: var(--muted); font-size: 18px; text-align: center;">
+      <b style="color: var(--text);">실시간 시뮬레이션</b>과 <b style="color: var(--text);">대용량 파일 배포</b>는 본질적으로 다른 일 — 분리가 자연스럽습니다.
+    </p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 6. AWS EC2                                     -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="AWS EC2 인스턴스 하나가 우리 게임의 모든 진실을 가집니다. 게임 안에서 누가 어디 있고 누가 누구를 맞췄는지는 이 서버가 결정합니다. 클라이언트는 결과를 받아서 화면에 그릴 뿐이에요. 이걸 데디케이트 서버, 'dedicated server'라고 부릅니다. 시뮬레이션 권위가 분리되어 있다는 뜻입니다. systemd로 데몬화해서 SSH가 끊겨도 살아있고, 서버가 죽으면 자동으로 재시작합니다.">
+    <p class="eyebrow">인프라 ① · <span class="hl-aws">AWS</span></p>
+    <h2>게임의 "심판"</h2>
+    <p class="big-text" style="margin-bottom: 28px;">
+      서버 하나가 <b>누가 어디 있고, 누가 맞았는지</b>를 결정합니다.<br/>
+      클라이언트는 결과를 받아 화면에 그릴 뿐입니다.
+    </p>
+
+    <div class="grid-3" style="max-width: 1100px;">
+      <div class="card aws">
+        <p class="sub">위치</p>
+        <h3>Seoul (ap-northeast-2)</h3>
+        <p class="muted" style="font-size: 14px; color: var(--muted); margin-top: 8px;">한국 팀원과의 거리(=지연시간) 최소화</p>
+      </div>
+      <div class="card aws">
+        <p class="sub">실행 파일</p>
+        <h3 class="mono" style="font-size: 18px;">RivaiServer (ELF)</h3>
+        <p class="muted" style="font-size: 14px; color: var(--muted); margin-top: 8px;">Linux ARM64 · 화면 없는 headless 빌드</p>
+      </div>
+      <div class="card aws">
+        <p class="sub">상주 방식</p>
+        <h3 class="mono" style="font-size: 18px;">systemd · Restart=always</h3>
+        <p class="muted" style="font-size: 14px; color: var(--muted); margin-top: 8px;">죽으면 자동 재시작 · 부팅 시 자동 시작</p>
+      </div>
+    </div>
+
+    <div class="codebox" style="margin-top: 32px; max-width: 720px;">
+<span class="comment"># 서버에 접속해보면 이런 식</span>
+$ <span class="accent">ssh</span> ubuntu@13.125.11.128
+$ <span class="accent">systemctl status</span> rivai-server
+  ● rivai-server.service — Rivai Dedicated Server
+     <span class="comment">Active: active (running) since ...</span>
+$ <span class="accent">journalctl</span> -u rivai-server -f   <span class="comment"># 실시간 로그</span></div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 7. Cloudflare 3종 세트                          -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="Cloudflare 안에서도 역할이 셋입니다. R2는 큰 파일 저장소, Pages는 사용자가 보는 웹사이트, Workers Static은 내부 위키. 각자 무료 티어 안에서 충분히 굴러갑니다. 특히 R2의 핵심은 egress가 무료라는 것. AWS S3는 다운로드할 때마다 돈을 내지만 R2는 사용자가 게임을 100번 받아도 돈이 안 나갑니다. 큰 파일을 배포하는 게임 입장에서는 결정적입니다.">
+    <p class="eyebrow">인프라 ② · <span class="hl-cf">Cloudflare</span></p>
+    <h2>3종 세트로 사용자 측을 다 커버</h2>
+
+    <div class="grid-3" style="gap: 22px;">
+      <div class="card r2">
+        <p class="sub">R2 BUCKET</p>
+        <h3 class="big" style="font-size: 24px;">파일 저장소</h3>
+        <p style="font-size: 14px; color: #cfd6ea;">
+          게임 zip, 런처 zip, manifest JSON.<br/>
+          <b>egress 비용 0</b> — 사용자가 100번 받아도 추가 비용 없음.
+        </p>
+        <p class="mono" style="font-size: 12px; color: var(--muted); margin-top: 14px;">버킷: rivai-dist</p>
+      </div>
+
+      <div class="card pages">
+        <p class="sub">PAGES</p>
+        <h3 class="big" style="font-size: 24px;">웹사이트</h3>
+        <p style="font-size: 14px; color: #cfd6ea;">
+          사용자가 처음 마주치는 포털.<br/>
+          홈 · 다운로드 · 패치노트 · Known Issues · 피드백.
+        </p>
+        <p class="mono" style="font-size: 12px; color: var(--muted); margin-top: 14px;">rivai-portal.pages.dev</p>
+      </div>
+
+      <div class="card workers">
+        <p class="sub">WORKERS · STATIC</p>
+        <h3 class="big" style="font-size: 24px;">개발 위키</h3>
+        <p style="font-size: 14px; color: #cfd6ea;">
+          road-to-rivai 마크다운 위키를 정적 HTML로 빌드해 호스팅.<br/>
+          포털과 분리된 독립 배포.
+        </p>
+        <p class="mono" style="font-size: 12px; color: var(--muted); margin-top: 14px;">내부 문서 전용</p>
+      </div>
+    </div>
+
+    <p style="margin-top: 36px; color: var(--muted); font-size: 16px; text-align: center;">
+      셋 다 <b style="color: var(--text);">wrangler</b> 한 CLI로 배포 — 운영이 단순합니다.
+    </p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 8. 사용자 흐름 ① — 포털                          -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="이제 사용자 시점으로 가봅시다. 사용자가 처음 마주치는 건 포털입니다. Cloudflare Pages에 올라가 있는 정적 웹사이트예요. 여기서 'Mac 다운로드' 버튼을 누르면 R2에 저장된 런처 zip을 직접 다운로드합니다. 5MB 정도라서 금방 받아져요.">
+    <p class="step-number">STEP 1 / 3 — 사용자 흐름</p>
+    <h2>포털 방문 → 런처 받기</h2>
+
+    <div class="grid-2" style="align-items: stretch;">
+      <div class="card user">
+        <p class="sub">사용자가 하는 일</p>
+        <ul style="font-size: 18px;">
+          <li>브라우저로 <span class="mono">rivai-portal.pages.dev</span> 방문</li>
+          <li>운영체제에 맞는 다운로드 버튼 클릭</li>
+          <li>런처 zip 다운로드 (약 5 MB)</li>
+          <li>압축 풀고 실행</li>
+        </ul>
+      </div>
+      <div class="card pages">
+        <p class="sub">시스템이 하는 일</p>
+        <ul style="font-size: 18px;">
+          <li><span class="hl-pages">Pages</span>가 정적 HTML 응답</li>
+          <li>다운로드 링크는 <span class="hl-r2">R2 public URL</span></li>
+          <li>R2가 직접 zip 응답 (egress 무료)</li>
+          <li>사용자 임의 위치에 설치 가능</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="margin-top: 28px; color: var(--muted); font-size: 16px; text-align: center;">
+      여기까지가 사용자가 의식적으로 하는 유일한 다운로드입니다.
+    </p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 9. 사용자 흐름 ② — 런처 실행                      -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="런처를 실행하면 가장 먼저 manifest 파일을 읽습니다. manifest는 JSON 한 파일인데, 어떤 버전이 최신이고 어디서 받는지가 적혀 있어요. 런처는 사용자가 가진 버전과 manifest의 latestVersion을 비교해서, 다르면 게임 zip을 다운로드합니다. 이 manifest 패턴 덕분에 우리는 게임을 재빌드하지 않고도 새 빌드를 푸시할 수 있어요. manifest의 JSON 한 줄만 갱신하면 끝.">
+    <p class="step-number">STEP 2 / 3 — 사용자 흐름</p>
+    <h2>런처가 게임을 가져온다</h2>
+
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; max-width: 1180px; margin: 0 auto;">
+      <div>
+        <ol class="numlist">
+          <li><b>manifest 읽기</b><span class="why">R2의 manifest/dev.json</span></li>
+          <li><b>버전 비교</b><span class="why">내 버전 vs latestVersion</span></li>
+          <li><b>게임 zip 다운로드</b><span class="why">다른 경우에만</span></li>
+          <li><b>SHA256 검증</b><span class="why">파일이 손상되지 않았는지</span></li>
+          <li><b>압축 해제 + 설치</b><span class="why">바로 실행 가능 상태로</span></li>
+        </ol>
+      </div>
+
+      <div>
+        <p style="color: var(--muted); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin: 0 0 12px;">manifest/dev.json (R2)</p>
+        <div class="codebox small">{
+  "latestVersion": <span class="r2">"0.1.0-dev"</span>,
+  "client": {
+    "mac": {
+      "downloadUrl": <span class="r2">"…/rivai_client_0.1.0-dev_mac.zip"</span>,
+      "sha256":      "d81f111c…",
+      "sizeBytes":   574274751
+    }
+  },
+  "server": {
+    "host": <span class="aws">"13.125.11.128"</span>,
+    "port": 7777
+  }
+}</div>
+        <p style="color: var(--muted); font-size: 14px; margin-top: 14px;">
+          ★ manifest 한 줄 갱신 = 모든 사용자 자동 패치
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 10. 사용자 흐름 ③ — Play                         -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="Play 버튼을 누르면 런처가 게임을 실행합니다. 이때 단순히 실행만 하는 게 아니라, manifest에서 읽은 서버 주소와 사용자 닉네임을 commandline 인자로 넘겨줍니다. 게임은 시작하자마자 그 인자를 보고 곧바로 서버에 연결해요. 그래서 사용자는 Host/Join 같은 선택을 할 필요가 없습니다. Play 한 번이면 다른 팀원과 같은 방에 들어갑니다. 일반적인 멀티플레이 게임과 가장 큰 UX 차이입니다.">
+    <p class="step-number">STEP 3 / 3 — 사용자 흐름</p>
+    <h2>Play 한 번 → 자동 서버 접속</h2>
+
+    <div class="codebox" style="max-width: 800px; margin-bottom: 28px;">
+<span class="comment"># 런처가 게임을 실행할 때</span>
+$ open Rivai.app --args \
+    -ServerAddr=<span class="aws">13.125.11.128:7777</span> \
+    -Nickname=alpha
+
+<span class="comment"># 게임은 인자를 받자마자 서버에 connect</span>
+GameInstance.Init     → commandline 파싱
+MainMenu Play button  → "open <span class="aws">13.125.11.128:7777</span>"</div>
+
+    <div class="grid-2" style="max-width: 1100px;">
+      <div class="card user">
+        <p class="sub">사용자 입장</p>
+        <h3 class="big" style="font-size: 26px;">Play 한 번</h3>
+        <p style="color: #cfd6ea; font-size: 16px;">Host도 Join도 IP도 안 묻습니다. 닉네임만 입력하고 Play.</p>
+      </div>
+      <div class="card aws">
+        <p class="sub">서버 입장</p>
+        <h3 class="big" style="font-size: 26px;">새 클라이언트 PostLogin</h3>
+        <p style="color: #cfd6ea; font-size: 16px;">PlayerController 생성 → 이미 접속한 다른 팀원과 한 월드.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 11. 개발자 한 줄 — release-game.sh             -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="사용자 측을 다 봤으니 마지막으로 개발자 측. 새 빌드를 푸시하는 건 명령어 한 줄입니다. release-game.sh를 실행하면 5가지 일이 자동으로 일어나요. 멱등(idempotent)으로 설계되어서 같은 명령을 두 번 실행해도 안전합니다. 실수로 다시 돌려도 같은 결과만 나옵니다. 300MiB 넘으면 wrangler 대신 boto3 멀티파트로 자동 fallback도 합니다.">
+    <p class="step-number">개발자 측 · 단 한 줄</p>
+    <h2>한 번의 명령으로 5가지가 일어난다</h2>
+
+    <div class="codebox" style="max-width: 900px; margin-bottom: 24px;">
+$ ./release-game.sh \
+    --version 0.1.0-dev \
+    --build-id 2026.05.18.003 \
+    --channel dev \
+    --client-mac Rivai.app.zip</div>
+
+    <ol class="numlist" style="max-width: 980px; margin: 0 auto;">
+      <li><b>SHA256 + 크기 계산</b><span class="why">파일 무결성과 진행률 표시용</span></li>
+      <li><b><span class="hl-r2">R2</span> 업로드</b><span class="why">300 MiB↑ 자동 멀티파트 (wrangler → boto3 fallback)</span></li>
+      <li><b>manifest 갱신</b><span class="why">버전 · SHA · 서버 정보 한 번에 (cache: 60s)</span></li>
+      <li><b>패치노트 렌더</b><span class="why">템플릿 → patch-notes/&lt;ver&gt;/index.html</span></li>
+      <li><b><span class="hl-pages">Pages</span> 배포</b><span class="why">wrangler pages deploy → rivai-portal</span></li>
+    </ol>
+
+    <p style="margin-top: 28px; color: var(--muted); font-size: 16px; text-align: center;">
+      <b style="color: var(--text);">멱등(idempotent)</b> — 같은 명령을 다시 돌려도 안전합니다.
+    </p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 12. 요약 + Q&A                                  -->
+  <!-- ============================================== -->
+  <section class="slide" data-notes="정리하겠습니다. 인프라는 두 클라우드, AWS와 Cloudflare. 사용자는 포털만 알면 되고, 런처가 manifest를 읽어 자동으로 게임을 패치합니다. Play 한 번이면 AWS 서버에 자동 접속. 개발자는 release-game.sh 한 줄로 모든 배포를 끝냅니다. 질문 받겠습니다.">
+    <p class="eyebrow">정리</p>
+    <h2>요약 한 장</h2>
+
+    <div class="grid-3" style="max-width: 1180px; margin-bottom: 32px;">
+      <div class="card aws">
+        <p class="sub">인프라</p>
+        <h3 style="font-size: 22px;"><span class="hl-aws">AWS</span> + <span class="hl-cf">Cloudflare</span></h3>
+        <p style="font-size: 14px; color: #cfd6ea; margin-top: 8px;">게임 서버는 EC2, 정적 자산은 R2/Pages/Workers</p>
+      </div>
+      <div class="card user">
+        <p class="sub">사용자 흐름</p>
+        <h3 style="font-size: 22px;">포털 → 런처 → Play</h3>
+        <p style="font-size: 14px; color: #cfd6ea; margin-top: 8px;">manifest 패턴으로 자동 패치, Host/Join 선택 없음</p>
+      </div>
+      <div class="card dev">
+        <p class="sub">개발자 흐름</p>
+        <h3 class="mono" style="font-size: 18px;">release-game.sh 한 줄</h3>
+        <p style="font-size: 14px; color: #cfd6ea; margin-top: 8px;">업로드 + manifest + 패치노트 + 포털 배포까지</p>
+      </div>
+    </div>
+
+    <p style="font-size: 28px; text-align: center; color: var(--text); margin: 24px 0 0;">
+      Q & A
+    </p>
+    <p style="text-align: center; color: var(--muted); font-size: 15px; margin-top: 10px;">
+      질문 받겠습니다 — 어디서부터 더 깊게 보고 싶으세요?
+    </p>
+  </section>
+
+</div>
+
+<!-- ============================================== -->
+<!-- Navigation                                     -->
+<!-- ============================================== -->
+<button class="nav-btn nav-prev" id="prevBtn" aria-label="이전">‹</button>
+<button class="nav-btn nav-next" id="nextBtn" aria-label="다음">›</button>
+
+<div class="counter"><span id="cur">1</span> / <span id="total">12</span></div>
+
+<div class="help">
+  <kbd>←</kbd> <kbd>→</kbd> 슬라이드 ·
+  <kbd>N</kbd> 발표자 노트 ·
+  <kbd>F</kbd> 전체화면 ·
+  <kbd>Home</kbd>/<kbd>End</kbd> 처음/끝
+</div>
+
+<div class="notes" id="notes">
+  <div class="lbl">발표자 노트</div>
+  <div id="noteText"></div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const bar = document.getElementById('bar');
+  const cur = document.getElementById('cur');
+  const totalEl = document.getElementById('total');
+  const noteEl = document.getElementById('notes');
+  const noteText = document.getElementById('noteText');
+  let i = 0;
+
+  totalEl.textContent = slides.length;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    cur.textContent = i + 1;
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+    noteText.textContent = slides[i].dataset.notes || '';
+    history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', e => { e.stopPropagation(); show(i - 1); });
+  document.getElementById('nextBtn').addEventListener('click', e => { e.stopPropagation(); show(i + 1); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+    else if (e.key === 'n' || e.key === 'N') { noteEl.classList.toggle('show'); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+  });
+
+  // hash routing
+  const initial = parseInt(location.hash.replace('#', ''), 10);
+  show(Number.isFinite(initial) && initial > 0 ? initial - 1 : 0);
+</script>
+
+</body>
+</html>
