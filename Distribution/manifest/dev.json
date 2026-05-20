@@ -5,12 +5,6 @@
   "buildId": "2026.05.18.003",
   "releasedAt": "2026-05-18T20:16:54+09:00",
   "client": {
-    "win64": {
-      "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/client/win64/rivai_client_0.1.0-dev_dev_win64.zip",
-      "sha256": "99dc303096f4ff121ab93c72f0898980d99e47c721b443ad98c17ff6ca2fda35",
-      "sizeBytes": 664,
-      "executable": "Rivai.exe"
-    },
     "mac": {
       "downloadUrl": "https://pub-0ac7d3ef69e344e1bb87f0d1475315cb.r2.dev/builds/dev/client/mac/rivai_client_0.1.0-dev_dev_mac.zip",
       "sha256": "d81f111c59c6722760b644a7acf1d022e20e22a36416756f4a35b05050af351c",
@@ -19,8 +13,8 @@
     }
   },
   "server": {
-    "name": "Test Server 01",
-    "host": "test.rivai.example",
+    "name": "Rivai Test (Seoul)",
+    "host": "13.125.11.128",
     "port": 7777
   },
   "patchNotesUrl": "https://rivai-portal.pages.dev/patch-notes/0.1.0-dev/",
